@@ -71,6 +71,10 @@
   .spinner{width:44px;height:44px;border:5px solid var(--soft);border-top-color:var(--red);border-radius:50%;animation:gira 1s linear infinite;margin:10px auto 14px}
   @keyframes gira{to{transform:rotate(360deg)}}
   .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:#fff;padding:14px 18px;border-radius:14px;font-size:16px;font-weight:600;z-index:30;width:min(90vw,440px);text-align:center}
+  .btn.wa{background:#1F7A4D;color:#fff}
+  .wa-link{background:none;border:1px solid var(--line);border-radius:10px;color:#1F7A4D;font-size:13px;font-weight:700;padding:6px 10px;margin-top:6px;cursor:pointer}
+  .wa-ok{font-size:12px;color:var(--ok);font-weight:600;display:block;text-align:right;margin-top:4px}
+  .check{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;font-size:36px;display:flex;align-items:center;justify-content:center;margin:4px auto 12px}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -139,6 +143,10 @@ const RADIO_DEFAULT = 300;          // metros
 const TOLERANCIA_GPS_MAX = 100;     // metros extra según precisión del GPS
 const HDR_VIGENCIA_HORAS = 20;      // la HDR activa se borra sola pasado este tiempo
 const DIAS_HISTORIAL = 3;
+// Aviso por WhatsApp: número con código de país, sin +, sin espacios y sin 15.
+// Celular de Argentina: 549 + característica + número. Ej. Buenos Aires: 5491123456789
+// Si se deja vacío (''), el botón de WhatsApp no aparece.
+const WHATSAPP_NUMERO = '5491154157123';
 /* ============================================================= */
 
 const SUC_BASE = [["2","SAN MARTIN 2095 - PATERNAL",-34.604423,-58.457357,""],["6","LA PLATA 2392 - POMPEYA",-34.642305,-58.42271,""],["7","JUAN DE GARAY - PARQUE PATRICIOS",-34.628806,-58.402221,""],["13","RUTA 3 KM 44.400 - GONZALEZ CATAN",-34.875964,-58.681749,""],["18","H.YRIGOYEN 3702 - ONCE",-34.614338,-58.418872,""],["19","LIMA 1553 - CONSTITUCION",-34.62633,-58.382572,""],["20","ELCANO 3693 - BELGRANO",-34.578958,-58.46066,""],["22","EL CANO 3002 - BELGRANO",-34.57025,-58.458523,""],["24","SCALABRINI ORTIZ 1688 - PALERMO",-34.589986,-58.424395,""],["25","PERU 1496 - SAN TELMO",-34.62477,-58.373658,""],["26","CERVINIO 3515 - PALERMO",-34.58015,-58.408796,""],["35","LOPEZ DE VEGA 2503 - VILLA DEVOTO",-34.617718,-58.519397,""],["37","PIEDRA BUENA 4902 - LUGANO",-34.686707,-58.475107,""],["38","SAN MARTIN 3029 - FLORIDA",-34.532106,-58.502498,""],["39","EMILIO CASTRO 7661 - LINIERS",-34.655923,-58.524952,""],["40","EVA PERON 2202 - FLORES SUR",-34.637893,-58.452696,""],["41","DIAZ VELEZ 4531 - ALMAGRO",-34.607886,-58.43112,""],["42","PARAGUAY 2672/94 - BARRIO NORTE",-34.596922,-58.406385,""],["43","BOEDO 777 - BOEDO",-34.621275,-58.416839,""],["44","MONROE 3284/98 - BELGRANO",-34.563609,-58.468434,""],["45","CABILDO 545 - BELGRANO",-34.570142,-58.4423,""],["46","RIVADAVIA 2846 - ONCE",null,null,""],["47","AMENABAR 2134/52 - BELGRANO",-34.562681,-58.458982,""],["48","DIRECTORIO 2647/57 - FLORES",-34.633871,-58.46448,""],["49","SAN MARTIN 251/75 - MAR DE AJO",-36.72112,-56.676932,""],["50","ESPINOSA 1960 - PATERNAL",-34.604022,-58.457625,""],["51","RIVADAVIA 13810 - RAMOS MEJIA",-34.639773,-58.561952,""],["52","SANABRIA 3320 - DEVOTO",-34.60549,-58.511013,""],["53","LA PLATA 3635 - SANTOS LUGARES",-34.599982,-58.544547,""],["55","AVELLANEDA 3758 - FLORESTA",-34.629156,-58.481606,""],["56","HONDURAS 3862 - PALERMO",-34.594198,-58.417572,""],["57","Av. San Martín 1866 - ZONA OESTE",-34.579216,-58.536169,""],["58","VIAMONTE 1571 - TRIBUNALES",-34.600463,-58.389204,""],["59","MONROE 5055/87 - VILLA URQUIZA",-34.573657,-58.485956,""],["60","JUAN B.ALBERDI 1737/49 - FLORES",-34.627905,-58.453477,""],["61","ALSINA - ONCE",-34.612417,-58.399571,""],["63","CNEL ROCA 1345 - POMPEYA",-34.654961,-58.418041,""],["64","MITRE 3300 - SARANDI",-34.682217,-58.341783,""],["65","H.YRIGOYEN 380 - QUILMES",-34.71879,-58.262353,""],["66","MAURE 1730 - BELGRANO",-34.566108,-58.436375,""],["67","ALBARELLOS 854 - ACASSUSO",-34.479914,-58.505349,""],["68","JORGE NEWBERY 555 - LAS LOMAS",-34.480304,-58.537523,""],["69","LIBERTADOR 18243 - PUNTA CHICA",-34.452183,-58.52727,""],["70","JUAN B. DE LA SALLE 653 - SAN ISIDRO",-34.466039,-58.507594,""],["74","GALLO 250 - ALMAGRO",-34.605357,-58.413724,""],["75","BERNARDINO RIVADAVIA 2602 - LANUS",-34.690607,-58.419915,""],["78","MEXICO 2236 Y PICHINCHA - SAN CRISTOBAL",-34.61572,-58.398735,""],["80","FRENCH 2417 - CAP. FED.",-34.5902,-58.399691,""],["82","MALABIA 103/43 - VILLA CRESPO",-34.601062,-58.442099,""],["83","RIVADAVIA 9840 / 54 - VILLA LURO",-34.637601,-58.502737,""],["84","CASTRO BARROS 24 - ALMAGRO",-34.611745,-58.420685,""],["85","EVA PERON 4730/32 - MATADEROS",-34.655971,-58.476766,""],["90","SEGUROLA 1701 - DEVOTO",-34.61932,-58.49935,""],["91","AGUERO 670 - ABASTO",-34.602375,-58.411747,""],["92","MAIPU 1758/60/62 - VTE LOPEZ",-34.521557,-58.485138,""],["93","Centro de Distribucion",-34.772574,-58.482354,""],["94","BOULOGNE SUR MER Y AV COOPERACION - TAPIALES",-34.701806,-58.499704,""],["95","MENDOZA 3905 - ROSARIO",-32.944619,-60.678067,""],["96","VENEZUELA 114 BIS - FISHERTON",-32.928844,-60.724543,""],["97","URQUIZA 1644/62/64/66 - ROSARIO",-32.941315,-60.644857,""],["99","3 DE FEBRERO - ROSARIO",-32.932897,-60.654819,""],["101","ITALIA 62 - AVELLANEDA",-34.665133,-58.362221,""],["103","GAONA 1902/50 - CAPITAL FEDERAL",-34.612088,-58.455026,""],["104","12 DE OCTUBRE 3054 - QUILMES",-34.742239,-58.289604,""],["105","BOULEVARD BS. AS. 710. ESQ. ALVEAR - MONTE GRANDE",-34.815406,-58.457274,""],["107","HIPOLITO IRIGOYEN 10699 - LOMAS DE ZAMORA",-34.781437,-58.406376,""],["108","CABILDO 4125/65 - CAP. FED",-34.545544,-58.470506,""],["109","CNEL JUAN PIRAN 801 - PARANA",-31.738083,-60.535716,""],["110","SOLDADO DE LA FRONTERA 5258/70 -    VILLA LUGANO",-34.685638,-58.463257,""],["111","RUTA 8 KM - SAN MARTIN",-34.580958,-58.542024,""],["116","MARTIN DE GAINZA 90 - CABALLITO",-34.620257,-58.44583,""],["117","J.M. ESTRADA 878/80 - CAMPANA",-34.165859,-58.96143,""],["118","RIVADAVIA 3396 - CIUDAD DE SANTA FE",-31.636559,-60.701124,""],["121","LARRAZABAL 3443/55 -",-34.671212,-58.479019,""],["123","O HIGGINS 1280 - BELLA VISTA",-34.570432,-58.68355,""],["124","SAN JUAN 2168 - CAP. FED.",-34.623047,-58.3958,""],["125","LOPE DE VEGA 1742 - CDAD. DE BS.AS",-34.624026,-58.511978,""],["129","COMESAñA S/N Y ACC OES - CIUDADELA",-34.6298,-58.547344,""],["130","DARDO ROCHA 251/259 - BERNAL",-34.718469,-58.291527,""],["131","H. IRIGOYEN 1826 - JOSE C PAZ",-34.518413,-58.755395,""],["136","PEDRO GOYENA 565/71 - CAP.FED",-34.625632,-58.435473,""],["142","Av. Juan B. Justo 5784 - CAP. FED.",-34.619137,-58.476081,""],["149","CALLE 43 NRO 782 - LA PLATA",-34.913145,-57.959928,""],["151","ASAMBLEA 1176 - PARUQUE CHACABUCO",-34.635905,-58.441542,""],["153","ALVAREZ JONTE 2502 - CAPITAL FEDERAL",-34.607498,-58.477744,""],["154","TAPIA DE CRUZ 420 - ESCOBAR",-34.345661,-58.792809,""],["155","HIGHLAND PARK E/LOS JAZMINES-PILAR",-34.420014,-58.795221,""],["158","CHARCAS 2980 - CAP.FED",-34.594551,-58.408535,""],["159","BARTOLOME MITRE 1558 - CAP.FED",-34.607695,-58.388774,""],["160","ANTARTIDA ARGENTINA 1160 - CABA",-34.58458,-58.373442,""],["162","PANAMERICANA KMT 37.5 - PILAR",-34.45308,-58.729085,""],["163","JUNIN 1073 - CAPITAL FEDERAL",-34.596002,-58.396932,""],["164","JOSé HERNáNDEZ 2965 - VILLA BALLESTER",-34.552616,-58.555275,""],["165","AVDA. JUNIN Y THEDY - ROSARIO",-32.927198,-60.670194,""],["167","NAZCA 1244 - CAP.FED",-34.618663,-58.476252,""],["168","CORRIENTES 5748 - CAP.FED",-34.595206,-58.444136,""],["170","LIBERTADOR 6840 - CAPITAL FEDERAL",-34.549269,-58.454981,""],["171","SARMIENTO 524 (RUTA 205) - EZEIZA",-34.893217,-58.571713,""],["174","CULLEN 5085 - CAP. FEDERAL",-34.57253,-58.488104,""],["175","PTE. PERON 2070 - CAP. FEDERAL",-34.607131,-58.395909,""],["176","TEODORO GARCIA 2419 - CAP. FEDERAL",-34.569678,-58.446221,""],["178","RUTA 11 KM 404 - GRAL MADARIAGA",-37.184301,-56.952822,""],["179","27 DE FEB 2320 - CUIDAD SANTA FE",-31.649968,-60.704345,""],["180","SAN PEDRITO 72 - CAPITAL",-34.631393,-58.468841,""],["181","RICARDO BALBIN - SAAVEDRA",-34.554213,-58.487139,""],["182","Av. Santa Maria de las Conchas 5420 Nordelta",-34.405072,-58.631547,""],["183","H. IRIGOYEN 8028 - BANFIELD",-34.748912,-58.399679,""],["184","COLEC. PILAR NORTE 4002 - RUTA 9 MALVINAS ARG",-34.453445,-58.729934,""],["185","RUTA PROVINCIAL Nº 7 Y DR. RAMON - NEUQUEN",-38.941641,-68.063248,""],["186","HIPOLITO YRIGOYEN 6174 - LANUS",-34.726458,-58.395329,""],["188","BARTOLOME MITRE 2951 - VICENTE LOPEZ",-34.523724,-58.520235,""],["189","205 E/RP 52 Y CABRAL Y SALVADORES - EZEIZA",-34.841778,-58.507659,""],["192","URUGUAY 4691 - SAN ISIDRO",-34.474796,-58.574731,""],["197","AV GRAL MANUEL BELGRANO 950 - GARIN",-34.417902,-58.725382,""],["199","AV. SANTA ROSA 1753 - CASTELAR",-34.64011,-58.655728,""],["203","AV SANTA FE 3760 - CAP. FED.",-34.584711,-58.416573,""],["204","RUTA 11 KM 330 - PARTIDO DE LA COSTA",-36.581328,-56.717064,""],["208","MERLO, AV PTE J. D. PERON 24080 - Merlo",-34.666443,-58.7037,""],["209","Av. Perú y Carlos Pellegrini - MENDOZA",-32.871818,-68.842584,""],["215","Gral. Juan Jose Valle 51 - Morón",-34.649687,-58.625979,""],["219","AV. VICTORICA 660 - Moreno",-34.640324,-58.795812,""],["220","Gaspar M. Jovellanos 151 - CABA",-34.631825,-58.374134,""],["235","Olavarria 180 - Quilmes",-34.724695,-58.255617,""],["238","Av. Jorge Newbery 4750 - Mar del Plata",-38.077517,-57.581732,""],["242","AV IDE LOS TRABAJADORES ENTRE ALTAIR Y AV DE LOS PESCADORES",-38.04318,-57.543054,""]];   // [codigo, direccion, lat, lon, radio]
@@ -202,8 +210,10 @@ function render(){
     <li class="parada">
       <div><div class="s">Sucursal ${esc(m.suc)}</div><div class="d">${esc(m.dir || '')}</div></div>
       <div><div class="h">${esc(m.horaServidor || hora(m.marcaCel))}</div>
-        <span class="estado ${m.estado === 'enviado' ? 'ok' : 'pend'}">${m.estado === 'enviado' ? 'Enviado' : 'Pendiente de envío'}</span></div>
+        <span class="estado ${m.estado === 'enviado' ? 'ok' : 'pend'}">${m.estado === 'enviado' ? 'Enviado' : 'Pendiente de envío'}</span>
+        ${waActivo() ? (m.wa ? '<span class="wa-ok">Avisado por WhatsApp</span>' : '<button class="wa-link" data-id="' + esc(m.id) + '">Avisar por WhatsApp</button>') : ''}</div>
     </li>`).join('');
+  $('lista').querySelectorAll('.wa-link').forEach(b => b.onclick = () => avisarWhatsApp(b.dataset.id));
   $('vacio').hidden = propios.length > 0;
   $('bSync').hidden = !marcados.some(m => m.estado !== 'enviado');
 }
@@ -360,9 +370,40 @@ function registrar(s, modo, pos, marcaCel){
     lat: pos ? pos.lat : null, lon: pos ? pos.lon : null, acc: pos ? Math.round(pos.acc) : null,
     marcaCel, estado: 'pendiente', horaServidor: null
   });
-  guardar(); cerrarPanel(); render();
-  toast('Llegada a la sucursal ' + s.suc + ' registrada (' + hora(marcaCel) + ')');
+  const nuevo = marcados[marcados.length - 1];
+  guardar(); render();
   sincronizar();
+  if(waActivo()){
+    abrirPanel(`<div class="check">✓</div>
+      <h3 style="text-align:center">Llegada registrada</h3>
+      <p style="text-align:center">Sucursal <b>${esc(s.suc)}</b> a las ${hora(marcaCel)}.<br>Ahora avisá por WhatsApp.</p>
+      <button class="btn wa" id="pWa">Avisar por WhatsApp</button>
+      <button class="btn sec" id="pNo">Después</button>`);
+    $('pWa').onclick = () => { avisarWhatsApp(nuevo.id); cerrarPanel(); };
+    $('pNo').onclick = cerrarPanel;
+  } else {
+    cerrarPanel();
+    toast('Llegada a la sucursal ' + s.suc + ' registrada (' + hora(marcaCel) + ')');
+  }
+}
+
+/* ---------------- WhatsApp ---------------- */
+function waActivo(){ return /^\d{10,15}$/.test(WHATSAPP_NUMERO); }
+function avisarWhatsApp(id){
+  const m = marcados.find(x => x.id === id);
+  if(!m || !waActivo()) return;
+  const lineas = [
+    '*Llegada a sucursal*',
+    'Sucursal: ' + m.suc + (m.dir ? ' - ' + m.dir : ''),
+    'HDR: ' + m.hdr,
+    'Hora: ' + (m.horaServidor || hora(m.marcaCel)),
+    'Chofer: ' + (chofer ? chofer.nombre + ' (Leg. ' + chofer.legajo + ')' + (chofer.empresa ? ' - ' + chofer.empresa : '') : '')
+  ];
+  if(m.lat !== null && m.lon !== null) lineas.push('Ubicación: https://maps.google.com/?q=' + m.lat.toFixed(6) + ',' + m.lon.toFixed(6));
+  if(m.modo === 'Manual' || m.modo === 'Sin GPS') lineas.push('(Sucursal elegida a mano: ' + m.modo + ')');
+  const url = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(lineas.join('\n'));
+  m.wa = true; guardar(); render();
+  window.open(url, '_blank');
 }
 
 /* ---------------- envío ---------------- */

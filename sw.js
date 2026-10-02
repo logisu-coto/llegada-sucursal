@@ -1,5 +1,5 @@
 // Service worker - Llegada a Sucursal. Subir VERSION al publicar cambios.
-const VERSION = 'llegada-v1';
+const VERSION = 'llegada-v2';
 const ARCHIVOS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
