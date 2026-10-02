@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A2433">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>Llegada a Sucursal</title>
+<style>
+  :root{
+    --ink:#1A2433; --muted:#5A6472; --line:#D9DEE4; --soft:#F1F3F5; --bg:#FFFFFF;
+    --red:#C8102E; --red-press:#9E0C24; --ok:#2E7D5B; --warn:#9A5B00;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
+  body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+  .wrap{max-width:520px;margin:0 auto;padding:16px 18px 28px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+  header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-.2px}
+  .net{font-size:13px;font-weight:600;color:var(--ok);white-space:nowrap}
+  .net.off{color:var(--warn)}
+  .aviso{background:#FFF4E5;border:1px solid #F0C27A;color:#6B3F00;border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:16px}
+  label{display:block;font-size:15px;font-weight:600;margin:14px 0 6px}
+  input{width:100%;font-size:20px;padding:14px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--ink)}
+  .btn{display:block;width:100%;min-height:56px;border:0;border-radius:14px;font-size:18px;font-weight:700;cursor:pointer;margin-top:12px;padding:12px}
+  .btn:focus-visible{outline:3px solid #3B82F6;outline-offset:2px}
+  .btn.prim{background:var(--ink);color:#fff}
+  .btn.rojo{background:var(--red);color:#fff}
+  .btn.sec{background:var(--soft);color:var(--ink)}
+  .btn.linea{background:#fff;color:var(--ink);border:2px solid var(--line)}
+  .intro{font-size:16px;color:var(--muted);line-height:1.45;margin:0 0 6px}
+  .chofer{font-size:15px;color:var(--muted);margin-bottom:12px}
+  .chofer b{color:var(--ink)}
+  .hdr{border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:18px}
+  .hdr .rot{font-size:14px;color:var(--muted)}
+  .hdr .num{font-size:34px;font-weight:800;letter-spacing:.5px;line-height:1.15;margin:2px 0 4px}
+  .hdr .fila{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+  .link{background:none;border:0;color:var(--ink);text-decoration:underline;font-size:15px;padding:8px 0;cursor:pointer}
+  .llegue{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;
+    height:clamp(180px,34vh,260px);border:0;border-radius:28px;background:var(--red);color:#fff;cursor:pointer;
+    font-size:30px;font-weight:800;gap:6px;box-shadow:0 6px 0 var(--red-press);transition:transform .08s,box-shadow .08s}
+  .llegue small{font-size:15px;font-weight:500;opacity:.9}
+  .llegue:active{transform:translateY(4px);box-shadow:0 2px 0 var(--red-press)}
+  .llegue:disabled{background:var(--soft);color:var(--muted);box-shadow:none;cursor:default;font-size:20px}
+  h2{font-size:17px;margin:26px 0 8px}
+  ul{list-style:none;margin:0;padding:0}
+  li.parada{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .parada .s{font-weight:700;font-size:17px}
+  .parada .d{font-size:13px;color:var(--muted);margin-top:2px}
+  .parada .h{font-size:22px;font-weight:800;text-align:right}
+  .estado{font-size:12px;font-weight:600;display:block;text-align:right}
+  .estado.ok{color:var(--ok)} .estado.pend{color:var(--warn)}
+  .vacio{color:var(--muted);font-size:15px}
+  footer{display:flex;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap}
+  /* panel inferior */
+  .fondo{position:fixed;inset:0;background:rgba(20,26,35,.5);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+  .panel{background:#fff;width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom,0));max-height:88vh;overflow:auto;animation:sube .18s ease-out}
+  @keyframes sube{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){.panel{animation:none}.llegue{transition:none}}
+  .panel h3{font-size:21px;margin:0 0 8px}
+  .panel p{font-size:16px;color:var(--muted);line-height:1.4;margin:0 0 6px}
+  .sucGrande{font-size:40px;font-weight:800;margin:6px 0 0}
+  .opcion{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--soft);border:0;border-radius:12px;padding:14px;margin-top:8px;font-size:16px;cursor:pointer;color:var(--ink)}
+  .opcion b{font-size:18px;margin-right:8px}
+  .opcion span.m{color:var(--muted);font-size:14px;white-space:nowrap}
+  .spinner{width:44px;height:44px;border:5px solid var(--soft);border-top-color:var(--red);border-radius:50%;animation:gira 1s linear infinite;margin:10px auto 14px}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:#fff;padding:14px 18px;border-radius:14px;font-size:16px;font-weight:600;z-index:30;width:min(90vw,440px);text-align:center}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Llegada a sucursal</h1>
+    <span id="net" class="net"></span>
+  </header>
+
+  <div id="avisoConfig" class="aviso" hidden>Falta configurar la dirección de envío (SCRIPT_URL). Los marcados se guardan en el celular pero no se envían.</div>
+
+  <!-- Registro único -->
+  <section id="vRegistro" hidden>
+    <p class="intro">Registrate una sola vez. Después la app queda lista y solo vas a cargar la hoja de ruta.</p>
+    <label for="rLegajo">Legajo o DNI</label>
+    <input id="rLegajo" inputmode="numeric" autocomplete="off" maxlength="12">
+    <label for="rNombre">Nombre y apellido</label>
+    <input id="rNombre" autocomplete="name" maxlength="60">
+    <label for="rEmpresa">Empresa (Coto o nombre del fletero)</label>
+    <input id="rEmpresa" autocomplete="organization" maxlength="60">
+    <button id="bRegistrar" class="btn prim">Registrarme</button>
+  </section>
+
+  <!-- Principal -->
+  <section id="vMain" hidden>
+    <div class="chofer" id="lChofer"></div>
+
+    <div class="hdr" id="hdrCarga">
+      <label for="iHdr" style="margin-top:0">Hoja de ruta (HDR)</label>
+      <input id="iHdr" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="Número de HDR">
+      <button id="bHdr" class="btn prim">Empezar esta HDR</button>
+    </div>
+
+    <div class="hdr" id="hdrActiva" hidden>
+      <div class="fila">
+        <div>
+          <div class="rot">HDR en curso</div>
+          <div class="num" id="lHdr"></div>
+        </div>
+        <button class="link" id="bCambiarHdr">Cambiar HDR</button>
+      </div>
+    </div>
+
+    <button id="bLlegue" class="llegue" disabled>Cargá la HDR para empezar</button>
+
+    <h2>Llegadas marcadas en esta HDR</h2>
+    <ul id="lista"></ul>
+    <p id="vacio" class="vacio">Todavía no marcaste ninguna llegada.</p>
+
+    <footer>
+      <button class="link" id="bSync">Enviar pendientes</button>
+      <button class="link" id="bCambiarChofer">Cambiar de chofer</button>
+    </footer>
+  </section>
+</div>
+
+<div id="fondo" class="fondo" hidden><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ======================= CONFIGURACIÓN ======================= */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEl_Y4ZMB6mlnOXaBuO1LP1WQdfpsDlEkoYVbaNifOFiznBUBPUK0KwzpL1buxG3zE/exec';   // termina en /exec
+const APP_KEY = 'TRAFICO-CD093-LLEGADAS';                 // igual que en Code.gs
+const RADIO_DEFAULT = 300;          // metros
+const TOLERANCIA_GPS_MAX = 100;     // metros extra según precisión del GPS
+const HDR_VIGENCIA_HORAS = 20;      // la HDR activa se borra sola pasado este tiempo
+const DIAS_HISTORIAL = 3;
+/* ============================================================= */
+
+const SUC_BASE = [["2","SAN MARTIN 2095 - PATERNAL",-34.604423,-58.457357,""],["6","LA PLATA 2392 - POMPEYA",-34.642305,-58.42271,""],["7","JUAN DE GARAY - PARQUE PATRICIOS",-34.628806,-58.402221,""],["13","RUTA 3 KM 44.400 - GONZALEZ CATAN",-34.875964,-58.681749,""],["18","H.YRIGOYEN 3702 - ONCE",-34.614338,-58.418872,""],["19","LIMA 1553 - CONSTITUCION",-34.62633,-58.382572,""],["20","ELCANO 3693 - BELGRANO",-34.578958,-58.46066,""],["22","EL CANO 3002 - BELGRANO",-34.57025,-58.458523,""],["24","SCALABRINI ORTIZ 1688 - PALERMO",-34.589986,-58.424395,""],["25","PERU 1496 - SAN TELMO",-34.62477,-58.373658,""],["26","CERVINIO 3515 - PALERMO",-34.58015,-58.408796,""],["35","LOPEZ DE VEGA 2503 - VILLA DEVOTO",-34.617718,-58.519397,""],["37","PIEDRA BUENA 4902 - LUGANO",-34.686707,-58.475107,""],["38","SAN MARTIN 3029 - FLORIDA",-34.532106,-58.502498,""],["39","EMILIO CASTRO 7661 - LINIERS",-34.655923,-58.524952,""],["40","EVA PERON 2202 - FLORES SUR",-34.637893,-58.452696,""],["41","DIAZ VELEZ 4531 - ALMAGRO",-34.607886,-58.43112,""],["42","PARAGUAY 2672/94 - BARRIO NORTE",-34.596922,-58.406385,""],["43","BOEDO 777 - BOEDO",-34.621275,-58.416839,""],["44","MONROE 3284/98 - BELGRANO",-34.563609,-58.468434,""],["45","CABILDO 545 - BELGRANO",-34.570142,-58.4423,""],["46","RIVADAVIA 2846 - ONCE",null,null,""],["47","AMENABAR 2134/52 - BELGRANO",-34.562681,-58.458982,""],["48","DIRECTORIO 2647/57 - FLORES",-34.633871,-58.46448,""],["49","SAN MARTIN 251/75 - MAR DE AJO",-36.72112,-56.676932,""],["50","ESPINOSA 1960 - PATERNAL",-34.604022,-58.457625,""],["51","RIVADAVIA 13810 - RAMOS MEJIA",-34.639773,-58.561952,""],["52","SANABRIA 3320 - DEVOTO",-34.60549,-58.511013,""],["53","LA PLATA 3635 - SANTOS LUGARES",-34.599982,-58.544547,""],["55","AVELLANEDA 3758 - FLORESTA",-34.629156,-58.481606,""],["56","HONDURAS 3862 - PALERMO",-34.594198,-58.417572,""],["57","Av. San Martín 1866 - ZONA OESTE",-34.579216,-58.536169,""],["58","VIAMONTE 1571 - TRIBUNALES",-34.600463,-58.389204,""],["59","MONROE 5055/87 - VILLA URQUIZA",-34.573657,-58.485956,""],["60","JUAN B.ALBERDI 1737/49 - FLORES",-34.627905,-58.453477,""],["61","ALSINA - ONCE",-34.612417,-58.399571,""],["63","CNEL ROCA 1345 - POMPEYA",-34.654961,-58.418041,""],["64","MITRE 3300 - SARANDI",-34.682217,-58.341783,""],["65","H.YRIGOYEN 380 - QUILMES",-34.71879,-58.262353,""],["66","MAURE 1730 - BELGRANO",-34.566108,-58.436375,""],["67","ALBARELLOS 854 - ACASSUSO",-34.479914,-58.505349,""],["68","JORGE NEWBERY 555 - LAS LOMAS",-34.480304,-58.537523,""],["69","LIBERTADOR 18243 - PUNTA CHICA",-34.452183,-58.52727,""],["70","JUAN B. DE LA SALLE 653 - SAN ISIDRO",-34.466039,-58.507594,""],["74","GALLO 250 - ALMAGRO",-34.605357,-58.413724,""],["75","BERNARDINO RIVADAVIA 2602 - LANUS",-34.690607,-58.419915,""],["78","MEXICO 2236 Y PICHINCHA - SAN CRISTOBAL",-34.61572,-58.398735,""],["80","FRENCH 2417 - CAP. FED.",-34.5902,-58.399691,""],["82","MALABIA 103/43 - VILLA CRESPO",-34.601062,-58.442099,""],["83","RIVADAVIA 9840 / 54 - VILLA LURO",-34.637601,-58.502737,""],["84","CASTRO BARROS 24 - ALMAGRO",-34.611745,-58.420685,""],["85","EVA PERON 4730/32 - MATADEROS",-34.655971,-58.476766,""],["90","SEGUROLA 1701 - DEVOTO",-34.61932,-58.49935,""],["91","AGUERO 670 - ABASTO",-34.602375,-58.411747,""],["92","MAIPU 1758/60/62 - VTE LOPEZ",-34.521557,-58.485138,""],["93","Centro de Distribucion",-34.772574,-58.482354,""],["94","BOULOGNE SUR MER Y AV COOPERACION - TAPIALES",-34.701806,-58.499704,""],["95","MENDOZA 3905 - ROSARIO",-32.944619,-60.678067,""],["96","VENEZUELA 114 BIS - FISHERTON",-32.928844,-60.724543,""],["97","URQUIZA 1644/62/64/66 - ROSARIO",-32.941315,-60.644857,""],["99","3 DE FEBRERO - ROSARIO",-32.932897,-60.654819,""],["101","ITALIA 62 - AVELLANEDA",-34.665133,-58.362221,""],["103","GAONA 1902/50 - CAPITAL FEDERAL",-34.612088,-58.455026,""],["104","12 DE OCTUBRE 3054 - QUILMES",-34.742239,-58.289604,""],["105","BOULEVARD BS. AS. 710. ESQ. ALVEAR - MONTE GRANDE",-34.815406,-58.457274,""],["107","HIPOLITO IRIGOYEN 10699 - LOMAS DE ZAMORA",-34.781437,-58.406376,""],["108","CABILDO 4125/65 - CAP. FED",-34.545544,-58.470506,""],["109","CNEL JUAN PIRAN 801 - PARANA",-31.738083,-60.535716,""],["110","SOLDADO DE LA FRONTERA 5258/70 -    VILLA LUGANO",-34.685638,-58.463257,""],["111","RUTA 8 KM - SAN MARTIN",-34.580958,-58.542024,""],["116","MARTIN DE GAINZA 90 - CABALLITO",-34.620257,-58.44583,""],["117","J.M. ESTRADA 878/80 - CAMPANA",-34.165859,-58.96143,""],["118","RIVADAVIA 3396 - CIUDAD DE SANTA FE",-31.636559,-60.701124,""],["121","LARRAZABAL 3443/55 -",-34.671212,-58.479019,""],["123","O HIGGINS 1280 - BELLA VISTA",-34.570432,-58.68355,""],["124","SAN JUAN 2168 - CAP. FED.",-34.623047,-58.3958,""],["125","LOPE DE VEGA 1742 - CDAD. DE BS.AS",-34.624026,-58.511978,""],["129","COMESAñA S/N Y ACC OES - CIUDADELA",-34.6298,-58.547344,""],["130","DARDO ROCHA 251/259 - BERNAL",-34.718469,-58.291527,""],["131","H. IRIGOYEN 1826 - JOSE C PAZ",-34.518413,-58.755395,""],["136","PEDRO GOYENA 565/71 - CAP.FED",-34.625632,-58.435473,""],["142","Av. Juan B. Justo 5784 - CAP. FED.",-34.619137,-58.476081,""],["149","CALLE 43 NRO 782 - LA PLATA",-34.913145,-57.959928,""],["151","ASAMBLEA 1176 - PARUQUE CHACABUCO",-34.635905,-58.441542,""],["153","ALVAREZ JONTE 2502 - CAPITAL FEDERAL",-34.607498,-58.477744,""],["154","TAPIA DE CRUZ 420 - ESCOBAR",-34.345661,-58.792809,""],["155","HIGHLAND PARK E/LOS JAZMINES-PILAR",-34.420014,-58.795221,""],["158","CHARCAS 2980 - CAP.FED",-34.594551,-58.408535,""],["159","BARTOLOME MITRE 1558 - CAP.FED",-34.607695,-58.388774,""],["160","ANTARTIDA ARGENTINA 1160 - CABA",-34.58458,-58.373442,""],["162","PANAMERICANA KMT 37.5 - PILAR",-34.45308,-58.729085,""],["163","JUNIN 1073 - CAPITAL FEDERAL",-34.596002,-58.396932,""],["164","JOSé HERNáNDEZ 2965 - VILLA BALLESTER",-34.552616,-58.555275,""],["165","AVDA. JUNIN Y THEDY - ROSARIO",-32.927198,-60.670194,""],["167","NAZCA 1244 - CAP.FED",-34.618663,-58.476252,""],["168","CORRIENTES 5748 - CAP.FED",-34.595206,-58.444136,""],["170","LIBERTADOR 6840 - CAPITAL FEDERAL",-34.549269,-58.454981,""],["171","SARMIENTO 524 (RUTA 205) - EZEIZA",-34.893217,-58.571713,""],["174","CULLEN 5085 - CAP. FEDERAL",-34.57253,-58.488104,""],["175","PTE. PERON 2070 - CAP. FEDERAL",-34.607131,-58.395909,""],["176","TEODORO GARCIA 2419 - CAP. FEDERAL",-34.569678,-58.446221,""],["178","RUTA 11 KM 404 - GRAL MADARIAGA",-37.184301,-56.952822,""],["179","27 DE FEB 2320 - CUIDAD SANTA FE",-31.649968,-60.704345,""],["180","SAN PEDRITO 72 - CAPITAL",-34.631393,-58.468841,""],["181","RICARDO BALBIN - SAAVEDRA",-34.554213,-58.487139,""],["182","Av. Santa Maria de las Conchas 5420 Nordelta",-34.405072,-58.631547,""],["183","H. IRIGOYEN 8028 - BANFIELD",-34.748912,-58.399679,""],["184","COLEC. PILAR NORTE 4002 - RUTA 9 MALVINAS ARG",-34.453445,-58.729934,""],["185","RUTA PROVINCIAL Nº 7 Y DR. RAMON - NEUQUEN",-38.941641,-68.063248,""],["186","HIPOLITO YRIGOYEN 6174 - LANUS",-34.726458,-58.395329,""],["188","BARTOLOME MITRE 2951 - VICENTE LOPEZ",-34.523724,-58.520235,""],["189","205 E/RP 52 Y CABRAL Y SALVADORES - EZEIZA",-34.841778,-58.507659,""],["192","URUGUAY 4691 - SAN ISIDRO",-34.474796,-58.574731,""],["197","AV GRAL MANUEL BELGRANO 950 - GARIN",-34.417902,-58.725382,""],["199","AV. SANTA ROSA 1753 - CASTELAR",-34.64011,-58.655728,""],["203","AV SANTA FE 3760 - CAP. FED.",-34.584711,-58.416573,""],["204","RUTA 11 KM 330 - PARTIDO DE LA COSTA",-36.581328,-56.717064,""],["208","MERLO, AV PTE J. D. PERON 24080 - Merlo",-34.666443,-58.7037,""],["209","Av. Perú y Carlos Pellegrini - MENDOZA",-32.871818,-68.842584,""],["215","Gral. Juan Jose Valle 51 - Morón",-34.649687,-58.625979,""],["219","AV. VICTORICA 660 - Moreno",-34.640324,-58.795812,""],["220","Gaspar M. Jovellanos 151 - CABA",-34.631825,-58.374134,""],["235","Olavarria 180 - Quilmes",-34.724695,-58.255617,""],["238","Av. Jorge Newbery 4750 - Mar del Plata",-38.077517,-57.581732,""],["242","AV IDE LOS TRABAJADORES ENTRE ALTAIR Y AV DE LOS PESCADORES",-38.04318,-57.543054,""]];   // [codigo, direccion, lat, lon, radio]
+
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const configurado = SCRIPT_URL.startsWith('https://') && !SCRIPT_URL.includes('PEGAR');
+
+let chofer = LS.get('chofer', null);
+let hdr = LS.get('hdr', null);
+let marcados = LS.get('marcados', []);
+let sucursales = normalizarSuc(LS.get('sucursales', null) || SUC_BASE);
+let enviando = false;
+
+function normalizarSuc(arr){
+  return arr.map(r => ({
+    suc: String(r[0]).trim(), dir: String(r[1] || '').trim(),
+    lat: (r[2] === '' || r[2] === null || isNaN(+r[2])) ? null : +r[2],
+    lon: (r[3] === '' || r[3] === null || isNaN(+r[3])) ? null : +r[3],
+    radio: +r[4] || RADIO_DEFAULT
+  }));
+}
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)); }
+function deviceId(){ let d = LS.get('deviceId', null); if(!d){ d = uid(); LS.set('deviceId', d); } return d; }
+function hora(ms){ return new Date(ms).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'}); }
+function metros(m){ return m >= 1000 ? (m/1000).toFixed(1).replace('.', ',') + ' km' : Math.round(m) + ' m'; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function dist(la1, lo1, la2, lo2){
+  const R = 6371000, r = Math.PI/180, dLa = (la2-la1)*r, dLo = (lo2-lo1)*r;
+  const a = Math.sin(dLa/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function guardar(){ LS.set('chofer', chofer); LS.set('hdr', hdr); LS.set('marcados', marcados); }
+
+/* ---------------- vistas ---------------- */
+function render(){
+  $('avisoConfig').hidden = configurado;
+  pintarRed();
+  if(!chofer){ $('vRegistro').hidden = false; $('vMain').hidden = true; return; }
+  $('vRegistro').hidden = true; $('vMain').hidden = false;
+  $('lChofer').innerHTML = '<b>' + esc(chofer.nombre) + '</b> – Legajo ' + esc(chofer.legajo) + (chofer.empresa ? ' – ' + esc(chofer.empresa) : '');
+
+  if(hdr && Date.now() - hdr.inicio > HDR_VIGENCIA_HORAS*3600e3){ hdr = null; guardar(); }
+  $('hdrCarga').hidden = !!hdr;
+  $('hdrActiva').hidden = !hdr;
+  const b = $('bLlegue');
+  if(hdr){
+    $('lHdr').textContent = hdr.numero;
+    b.disabled = false;
+    b.innerHTML = 'Llegué a la sucursal<small>Tocá al estacionar en la sucursal</small>';
+  } else {
+    b.disabled = true;
+    b.textContent = 'Cargá la HDR para empezar';
+  }
+
+  const propios = hdr ? marcados.filter(m => m.hdr === hdr.numero).sort((a,b) => a.marcaCel - b.marcaCel) : [];
+  $('lista').innerHTML = propios.map(m => `
+    <li class="parada">
+      <div><div class="s">Sucursal ${esc(m.suc)}</div><div class="d">${esc(m.dir || '')}</div></div>
+      <div><div class="h">${esc(m.horaServidor || hora(m.marcaCel))}</div>
+        <span class="estado ${m.estado === 'enviado' ? 'ok' : 'pend'}">${m.estado === 'enviado' ? 'Enviado' : 'Pendiente de envío'}</span></div>
+    </li>`).join('');
+  $('vacio').hidden = propios.length > 0;
+  $('bSync').hidden = !marcados.some(m => m.estado !== 'enviado');
+}
+function pintarRed(){
+  const n = $('net');
+  if(navigator.onLine){ n.textContent = 'Con señal'; n.className = 'net'; }
+  else { n.textContent = 'Sin señal: se envía después'; n.className = 'net off'; }
+}
+function toast(t, ms){
+  const el = $('toast'); el.textContent = t; el.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.hidden = true, ms || 3200);
+}
+function abrirPanel(html){ $('panel').innerHTML = html; $('fondo').hidden = false; }
+function cerrarPanel(){ $('fondo').hidden = true; $('panel').innerHTML = ''; }
+$('fondo').addEventListener('click', e => { if(e.target.id === 'fondo' && !$('fondo').dataset.bloq) cerrarPanel(); });
+
+/* ---------------- registro ---------------- */
+$('bRegistrar').onclick = () => {
+  const legajo = $('rLegajo').value.trim(), nombre = $('rNombre').value.trim(), empresa = $('rEmpresa').value.trim();
+  if(legajo.length < 2){ toast('Ingresá tu legajo o DNI'); return; }
+  if(nombre.length < 3){ toast('Ingresá tu nombre y apellido'); return; }
+  chofer = { legajo, nombre, empresa, deviceId: deviceId(), enviado: false };
+  guardar(); render(); sincronizar();
+  toast('Listo, ya estás registrado');
+};
+$('bCambiarChofer').onclick = () => {
+  abrirPanel(`<h3>Cambiar de chofer</h3>
+    <p>Se borra el chofer registrado en este celular. Las llegadas pendientes se siguen enviando igual.</p>
+    <button class="btn rojo" id="pSi">Sí, cambiar de chofer</button>
+    <button class="btn sec" id="pNo">Cancelar</button>`);
+  $('pSi').onclick = () => { chofer = null; hdr = null; guardar(); cerrarPanel(); render(); };
+  $('pNo').onclick = cerrarPanel;
+};
+
+/* ---------------- HDR ---------------- */
+$('bHdr').onclick = () => {
+  const v = $('iHdr').value.trim().replace(/\s+/g, '');
+  if(!/^[A-Za-z0-9\-]{3,20}$/.test(v)){ toast('Revisá el número de HDR'); return; }
+  abrirPanel(`<h3>Confirmá la hoja de ruta</h3>
+    <p>Vas a marcar llegadas para la HDR:</p>
+    <div class="sucGrande">${esc(v)}</div>
+    <button class="btn prim" id="pSi">Sí, es esta</button>
+    <button class="btn sec" id="pNo">Corregir</button>`);
+  $('pSi').onclick = () => { hdr = { numero: v, inicio: Date.now() }; guardar(); $('iHdr').value = ''; cerrarPanel(); render(); };
+  $('pNo').onclick = () => { cerrarPanel(); $('iHdr').focus(); };
+};
+$('bCambiarHdr').onclick = () => {
+  abrirPanel(`<h3>Cambiar de HDR</h3>
+    <p>Usalo cuando termines esta hoja de ruta o si cargaste un número equivocado.</p>
+    <button class="btn prim" id="pSi">Cargar otra HDR</button>
+    <button class="btn sec" id="pNo">Cancelar</button>`);
+  $('pSi').onclick = () => { hdr = null; guardar(); cerrarPanel(); render(); $('iHdr').focus(); };
+  $('pNo').onclick = cerrarPanel;
+};
+
+/* ---------------- llegada ---------------- */
+$('bLlegue').onclick = () => { if(hdr) buscarUbicacion(); };
+
+function buscarUbicacion(){
+  $('fondo').dataset.bloq = '1';
+  abrirPanel(`<div class="spinner"></div><h3 style="text-align:center">Buscando tu ubicación…</h3>
+    <p style="text-align:center">Puede tardar unos segundos.</p>`);
+  const marcaCel = Date.now();
+  if(!('geolocation' in navigator)){ sinGps(marcaCel, 'Este celular no tiene GPS disponible.'); return; }
+  navigator.geolocation.getCurrentPosition(
+    p => { delete $('fondo').dataset.bloq; evaluar(marcaCel, p.coords.latitude, p.coords.longitude, p.coords.accuracy); },
+    err => {
+      delete $('fondo').dataset.bloq;
+      const msg = err.code === 1 ? 'La app no tiene permiso para usar la ubicación. Activalo en los ajustes del navegador.'
+                : err.code === 3 ? 'El GPS tardó demasiado en responder.' : 'No se pudo obtener la ubicación.';
+      sinGps(marcaCel, msg);
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+  );
+}
+
+function evaluar(marcaCel, lat, lon, acc){
+  const tol = Math.min(acc || 0, TOLERANCIA_GPS_MAX);
+  const lista = sucursales.filter(s => s.lat !== null)
+    .map(s => Object.assign({}, s, { d: dist(lat, lon, s.lat, s.lon) }))
+    .sort((a, b) => a.d - b.d);
+  const cerca = lista.filter(s => s.d <= s.radio + tol);
+  const pos = { lat, lon, acc };
+
+  if(cerca.length === 1){
+    const s = cerca[0];
+    abrirPanel(`<h3>¿Llegaste a esta sucursal?</h3>
+      <div class="sucGrande">Sucursal ${esc(s.suc)}</div>
+      <p>${esc(s.dir)} — a ${metros(s.d)}</p>
+      <button class="btn rojo" id="pSi">Confirmar llegada</button>
+      <button class="btn sec" id="pNo">No es esta sucursal</button>`);
+    $('pSi').onclick = () => registrar(s, 'GPS', pos, marcaCel);
+    $('pNo').onclick = () => elegirManual(marcaCel, pos, lista, 'Manual');
+  } else if(cerca.length > 1){
+    abrirPanel(`<h3>Hay más de una sucursal cerca</h3>
+      <p>Elegí en cuál estás descargando:</p>
+      ${cerca.map((s, i) => `<button class="opcion" data-i="${i}"><span><b>${esc(s.suc)}</b>${esc(s.dir)}</span><span class="m">${metros(s.d)}</span></button>`).join('')}
+      <button class="btn sec" id="pOtra">Es otra sucursal</button>`);
+    $('panel').querySelectorAll('.opcion').forEach(b => b.onclick = () => registrar(cerca[+b.dataset.i], 'GPS - elegida', pos, marcaCel));
+    $('pOtra').onclick = () => elegirManual(marcaCel, pos, lista, 'Manual');
+  } else {
+    const n = lista[0];
+    abrirPanel(`<h3>No estás cerca de una sucursal registrada</h3>
+      <p>${n ? 'La más cercana es la <b>' + esc(n.suc) + '</b> (' + esc(n.dir) + '), a ' + metros(n.d) + '.' : ''}
+      Precisión del GPS: ${metros(acc || 0)}.</p>
+      <button class="btn prim" id="pRe">Volver a buscar ubicación</button>
+      <button class="btn sec" id="pMan">Elegir la sucursal de la lista</button>
+      <button class="btn linea" id="pCan">Cancelar</button>`);
+    $('pRe').onclick = buscarUbicacion;
+    $('pMan').onclick = () => elegirManual(marcaCel, pos, lista, 'Manual');
+    $('pCan').onclick = cerrarPanel;
+  }
+}
+
+function sinGps(marcaCel, motivo){
+  delete $('fondo').dataset.bloq;
+  abrirPanel(`<h3>Sin ubicación</h3><p>${esc(motivo)}</p>
+    <button class="btn prim" id="pRe">Intentar de nuevo</button>
+    <button class="btn sec" id="pMan">Elegir la sucursal de la lista</button>
+    <button class="btn linea" id="pCan">Cancelar</button>`);
+  $('pRe').onclick = buscarUbicacion;
+  $('pMan').onclick = () => elegirManual(marcaCel, null, null, 'Sin GPS');
+  $('pCan').onclick = cerrarPanel;
+}
+
+function elegirManual(marcaCel, pos, listaDist, modo){
+  const base = listaDist ? listaDist.concat(sucursales.filter(s => s.lat === null).map(s => Object.assign({}, s, {d: null})))
+                         : sucursales.slice().sort((a, b) => (+a.suc || 0) - (+b.suc || 0));
+  abrirPanel(`<h3>Elegí la sucursal</h3>
+    <input id="pBus" placeholder="Número o dirección" autocomplete="off">
+    <div id="pLista"></div>
+    <button class="btn linea" id="pCan">Cancelar</button>`);
+  const pintar = () => {
+    const q = $('pBus').value.trim().toLowerCase();
+    const f = base.filter(s => !q || s.suc.toLowerCase() === q || s.suc.toLowerCase().startsWith(q) || s.dir.toLowerCase().includes(q)).slice(0, 40);
+    $('pLista').innerHTML = f.map((s, i) => `<button class="opcion" data-i="${i}"><span><b>${esc(s.suc)}</b>${esc(s.dir)}</span>${s.d !== null && s.d !== undefined ? '<span class="m">' + metros(s.d) + '</span>' : ''}</button>`).join('')
+      || '<p style="margin-top:12px">No hay sucursales con ese dato.</p>';
+    $('pLista').querySelectorAll('.opcion').forEach(b => b.onclick = () => registrar(f[+b.dataset.i], modo, pos, marcaCel));
+  };
+  $('pBus').oninput = pintar; pintar();
+  $('pCan').onclick = cerrarPanel;
+}
+
+function registrar(s, modo, pos, marcaCel){
+  const ya = marcados.find(m => m.hdr === hdr.numero && m.suc === s.suc);
+  if(ya){
+    abrirPanel(`<h3>Ya está marcada</h3>
+      <p>La llegada a la sucursal <b>${esc(s.suc)}</b> para la HDR ${esc(hdr.numero)} ya se registró a las ${esc(ya.horaServidor || hora(ya.marcaCel))}.</p>
+      <button class="btn prim" id="pOk">Entendido</button>`);
+    $('pOk').onclick = cerrarPanel; return;
+  }
+  marcados.push({
+    id: uid(), hdr: hdr.numero, suc: s.suc, dir: s.dir, modo,
+    lat: pos ? pos.lat : null, lon: pos ? pos.lon : null, acc: pos ? Math.round(pos.acc) : null,
+    marcaCel, estado: 'pendiente', horaServidor: null
+  });
+  guardar(); cerrarPanel(); render();
+  toast('Llegada a la sucursal ' + s.suc + ' registrada (' + hora(marcaCel) + ')');
+  sincronizar();
+}
+
+/* ---------------- envío ---------------- */
+async function post(payload){
+  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 15000);
+  try{
+    const r = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({ key: APP_KEY }, payload)), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function sincronizar(manual){
+  if(enviando || !configurado) { if(manual && !configurado) toast('Falta configurar SCRIPT_URL'); return; }
+  if(!navigator.onLine){ if(manual) toast('Sin señal: se envía cuando vuelva'); return; }
+  enviando = true;
+  let error = false;
+  try{
+    if(chofer && !chofer.enviado){
+      const r = await post({ action: 'registro', legajo: chofer.legajo, nombre: chofer.nombre, empresa: chofer.empresa, deviceId: chofer.deviceId });
+      if(r && r.ok){ chofer.enviado = true; guardar(); }
+    }
+    for(const m of marcados.filter(x => x.estado !== 'enviado')){
+      const r = await post({ action: 'marcado', id: m.id, hdr: m.hdr, suc: m.suc, modo: m.modo,
+        lat: m.lat, lon: m.lon, acc: m.acc, marcaCel: m.marcaCel, envioCel: Date.now(),
+        legajo: chofer ? chofer.legajo : '', nombre: chofer ? chofer.nombre : '', empresa: chofer ? chofer.empresa : '',
+        deviceId: deviceId() });
+      if(r && r.ok){ m.estado = 'enviado'; m.horaServidor = r.hora || null; guardar(); render(); }
+      else { error = true; break; }
+    }
+  }catch(e){ error = true; }
+  enviando = false;
+  limpiarHistorial();
+  render();
+  if(manual) toast(error ? 'No se pudo enviar. Se reintenta solo.' : 'Todo enviado');
+}
+
+function limpiarHistorial(){
+  const lim = Date.now() - DIAS_HISTORIAL*864e5;
+  const antes = marcados.length;
+  marcados = marcados.filter(m => m.estado !== 'enviado' || m.marcaCel > lim);
+  if(marcados.length !== antes) guardar();
+}
+
+async function actualizarSucursales(){
+  if(!configurado || !navigator.onLine) return;
+  try{
+    const r = await fetch(SCRIPT_URL + '?action=sucursales');
+    const j = await r.json();
+    if(j && j.ok && Array.isArray(j.sucursales) && j.sucursales.length){
+      LS.set('sucursales', j.sucursales); sucursales = normalizarSuc(j.sucursales);
+    }
+  }catch(e){}
+}
+
+$('bSync').onclick = () => sincronizar(true);
+window.addEventListener('online', () => { pintarRed(); sincronizar(); });
+window.addEventListener('offline', pintarRed);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible'){ render(); sincronizar(); } });
+setInterval(sincronizar, 60000);
+
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
+
+render();
+actualizarSucursales();
+sincronizar();
+</script>
+</body>
+</html>
