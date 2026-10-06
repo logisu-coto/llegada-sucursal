@@ -75,6 +75,19 @@
   .wa-link{background:none;border:1px solid var(--line);border-radius:10px;color:#1F7A4D;font-size:13px;font-weight:700;padding:6px 10px;margin-top:6px;cursor:pointer}
   .wa-ok{font-size:12px;color:var(--ok);font-weight:600;display:block;text-align:right;margin-top:4px}
   .check{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;font-size:36px;display:flex;align-items:center;justify-content:center;margin:4px auto 12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+  .chip{display:flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:999px;padding:5px 5px 5px 14px;font-size:20px;font-weight:800}
+  .chip.hecha{border-color:var(--ok)}
+  .chip .ok{color:var(--ok);font-size:16px}
+  .chip button{background:var(--soft);border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--ink)}
+  .addrow{display:flex;gap:8px}
+  .addrow input{flex:1;min-width:0}
+  .btn.add{width:auto;margin-top:0;padding:12px 18px;min-height:0}
+  .ayuda{font-size:13px;color:var(--muted);margin:8px 0 0}
+  .opcion.sel{background:#fff;box-shadow:inset 0 0 0 3px var(--ink)}
+  .opcion:disabled{opacity:.5;cursor:default}
+  .marca{width:28px;height:28px;border-radius:8px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+  .opcion.sel .marca{background:var(--ink);color:#fff}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -103,25 +116,22 @@
   <section id="vMain" hidden>
     <div class="chofer" id="lChofer"></div>
 
-    <div class="hdr" id="hdrCarga">
-      <label for="iHdr" style="margin-top:0">Hoja de ruta (HDR)</label>
-      <input id="iHdr" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="Número de HDR">
-      <button id="bHdr" class="btn prim">Empezar esta HDR</button>
-    </div>
-
-    <div class="hdr" id="hdrActiva" hidden>
+    <div class="hdr" id="hdrBox">
       <div class="fila">
-        <div>
-          <div class="rot">HDR en curso</div>
-          <div class="num" id="lHdr"></div>
-        </div>
-        <button class="link" id="bCambiarHdr">Cambiar HDR</button>
+        <div class="rot">HDR de este viaje</div>
+        <button class="link" id="bTerminar" hidden>Terminar viaje</button>
       </div>
+      <div class="chips" id="chips"></div>
+      <div class="addrow">
+        <input id="iHdr" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="Número de HDR" aria-label="Número de HDR">
+        <button id="bHdr" class="btn prim add">Agregar</button>
+      </div>
+      <p class="ayuda">Cargá todas las HDR con las que salís, una por una.</p>
     </div>
 
     <button id="bLlegue" class="llegue" disabled>Cargá la HDR para empezar</button>
 
-    <h2>Llegadas marcadas en esta HDR</h2>
+    <h2>Llegadas marcadas en este viaje</h2>
     <ul id="lista"></ul>
     <p id="vacio" class="vacio">Todavía no marcaste ninguna llegada.</p>
 
@@ -159,7 +169,8 @@ const LS = {
 const configurado = SCRIPT_URL.startsWith('https://') && !SCRIPT_URL.includes('PEGAR');
 
 let chofer = LS.get('chofer', null);
-let hdr = LS.get('hdr', null);
+let viaje = LS.get('viaje', null);
+(function migrar(){ const v = LS.get('hdr', null); if(!viaje && v && v.numero){ viaje = { hdrs: [v.numero], inicio: v.inicio }; } })();
 let marcados = LS.get('marcados', []);
 let sucursales = normalizarSuc(LS.get('sucursales', null) || SUC_BASE);
 let enviando = false;
@@ -182,7 +193,8 @@ function dist(la1, lo1, la2, lo2){
   const a = Math.sin(dLa/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;
   return 2*R*Math.asin(Math.sqrt(a));
 }
-function guardar(){ LS.set('chofer', chofer); LS.set('hdr', hdr); LS.set('marcados', marcados); }
+function guardar(){ LS.set('chofer', chofer); LS.set('viaje', viaje); LS.set('hdr', null); LS.set('marcados', marcados); }
+function hdrsViaje(){ return viaje ? viaje.hdrs : []; }
 
 /* ---------------- vistas ---------------- */
 function render(){
@@ -192,29 +204,38 @@ function render(){
   $('vRegistro').hidden = true; $('vMain').hidden = false;
   $('lChofer').innerHTML = '<b>' + esc(chofer.nombre) + '</b> – Legajo ' + esc(chofer.legajo) + (chofer.empresa ? ' – ' + esc(chofer.empresa) : '');
 
-  if(hdr && Date.now() - hdr.inicio > HDR_VIGENCIA_HORAS*3600e3){ hdr = null; guardar(); }
-  $('hdrCarga').hidden = !!hdr;
-  $('hdrActiva').hidden = !hdr;
+  if(viaje && (Date.now() - viaje.inicio > HDR_VIGENCIA_HORAS*3600e3 || !viaje.hdrs.length)){ viaje = null; guardar(); }
+  const lista = hdrsViaje();
+  $('chips').innerHTML = lista.map(h => {
+    const hecha = marcados.some(m => m.hdr === h);
+    return `<span class="chip${hecha ? ' hecha' : ''}">${esc(h)}${hecha ? '<span class="ok">✓</span>' : ''}<button data-h="${esc(h)}" aria-label="Quitar HDR ${esc(h)}">×</button></span>`;
+  }).join('');
+  $('chips').querySelectorAll('button').forEach(b => b.onclick = () => quitarHdr(b.dataset.h));
+  $('chips').hidden = !lista.length;
+  $('bTerminar').hidden = !lista.length;
   const b = $('bLlegue');
-  if(hdr){
-    $('lHdr').textContent = hdr.numero;
+  if(lista.length){
     b.disabled = false;
     b.innerHTML = 'Llegué a la sucursal<small>Tocá al estacionar en la sucursal</small>';
   } else {
     b.disabled = true;
-    b.textContent = 'Cargá la HDR para empezar';
+    b.textContent = 'Cargá las HDR para empezar';
   }
 
-  const propios = hdr ? marcados.filter(m => m.hdr === hdr.numero).sort((a,b) => a.marcaCel - b.marcaCel) : [];
-  $('lista').innerHTML = propios.map(m => `
-    <li class="parada">
-      <div><div class="s">Sucursal ${esc(m.suc)}</div><div class="d">${esc(m.dir || '')}</div></div>
+  const propios = marcados.filter(m => lista.includes(m.hdr)).sort((a,b) => a.marcaCel - b.marcaCel);
+  const grupos = [];
+  propios.forEach(m => { const k = m.grp || m.id; let g = grupos.find(x => x.k === k); if(!g){ g = { k, ms: [] }; grupos.push(g); } g.ms.push(m); });
+  $('lista').innerHTML = grupos.map(g => {
+    const m = g.ms[0], env = g.ms.every(x => x.estado === 'enviado'), wa = g.ms.every(x => x.wa);
+    return `<li class="parada">
+      <div><div class="s">Sucursal ${esc(m.suc)}</div><div class="d">${esc(m.dir || '')}</div><div class="d">HDR ${g.ms.map(x => esc(x.hdr)).join(', ')}</div></div>
       <div><div class="h">${esc(m.horaServidor || hora(m.marcaCel))}</div>
-        <span class="estado ${m.estado === 'enviado' ? 'ok' : 'pend'}">${m.estado === 'enviado' ? 'Enviado' : 'Pendiente de envío'}</span>
-        ${waActivo() ? (m.wa ? '<span class="wa-ok">Avisado por WhatsApp</span>' : '<button class="wa-link" data-id="' + esc(m.id) + '">Avisar por WhatsApp</button>') : ''}</div>
-    </li>`).join('');
-  $('lista').querySelectorAll('.wa-link').forEach(b => b.onclick = () => avisarWhatsApp(b.dataset.id));
-  $('vacio').hidden = propios.length > 0;
+        <span class="estado ${env ? 'ok' : 'pend'}">${env ? 'Enviado' : 'Pendiente de envío'}</span>
+        ${waActivo() ? (wa ? '<span class="wa-ok">Avisado por WhatsApp</span>' : '<button class="wa-link" data-g="' + esc(g.k) + '">Avisar por WhatsApp</button>') : ''}</div>
+    </li>`;
+  }).join('');
+  $('lista').querySelectorAll('.wa-link').forEach(b => b.onclick = () => avisarWhatsApp(b.dataset.g));
+  $('vacio').hidden = grupos.length > 0;
   $('bSync').hidden = !marcados.some(m => m.estado !== 'enviado');
 }
 function pintarRed(){
@@ -244,33 +265,42 @@ $('bCambiarChofer').onclick = () => {
     <p>Se borra el chofer registrado en este celular. Las llegadas pendientes se siguen enviando igual.</p>
     <button class="btn rojo" id="pSi">Sí, cambiar de chofer</button>
     <button class="btn sec" id="pNo">Cancelar</button>`);
-  $('pSi').onclick = () => { chofer = null; hdr = null; guardar(); cerrarPanel(); render(); };
+  $('pSi').onclick = () => { chofer = null; viaje = null; guardar(); cerrarPanel(); render(); };
   $('pNo').onclick = cerrarPanel;
 };
 
 /* ---------------- HDR ---------------- */
-$('bHdr').onclick = () => {
+function agregarHdr(){
   const v = $('iHdr').value.trim().replace(/\s+/g, '');
   if(!/^[A-Za-z0-9\-]{3,20}$/.test(v)){ toast('Revisá el número de HDR'); return; }
-  abrirPanel(`<h3>Confirmá la hoja de ruta</h3>
-    <p>Vas a marcar llegadas para la HDR:</p>
-    <div class="sucGrande">${esc(v)}</div>
-    <button class="btn prim" id="pSi">Sí, es esta</button>
-    <button class="btn sec" id="pNo">Corregir</button>`);
-  $('pSi').onclick = () => { hdr = { numero: v, inicio: Date.now() }; guardar(); $('iHdr').value = ''; cerrarPanel(); render(); };
-  $('pNo').onclick = () => { cerrarPanel(); $('iHdr').focus(); };
-};
-$('bCambiarHdr').onclick = () => {
-  abrirPanel(`<h3>Cambiar de HDR</h3>
-    <p>Usalo cuando termines esta hoja de ruta o si cargaste un número equivocado.</p>
-    <button class="btn prim" id="pSi">Cargar otra HDR</button>
+  if(hdrsViaje().includes(v)){ toast('Esa HDR ya está cargada'); $('iHdr').value = ''; return; }
+  if(!viaje) viaje = { hdrs: [], inicio: Date.now() };
+  viaje.hdrs.push(v); guardar(); $('iHdr').value = ''; render();
+  toast('HDR ' + v + ' agregada'); $('iHdr').focus();
+}
+$('bHdr').onclick = agregarHdr;
+$('iHdr').addEventListener('keydown', e => { if(e.key === 'Enter') agregarHdr(); });
+
+function quitarHdr(h){
+  const usada = marcados.some(m => m.hdr === h);
+  abrirPanel(`<h3>Quitar la HDR ${esc(h)}</h3>
+    <p>${usada ? 'Ya tiene llegadas marcadas: esas quedan registradas igual. ' : ''}Usalo si la cargaste mal.</p>
+    <button class="btn rojo" id="pSi">Quitar HDR</button>
     <button class="btn sec" id="pNo">Cancelar</button>`);
-  $('pSi').onclick = () => { hdr = null; guardar(); cerrarPanel(); render(); $('iHdr').focus(); };
+  $('pSi').onclick = () => { viaje.hdrs = viaje.hdrs.filter(x => x !== h); guardar(); cerrarPanel(); render(); };
+  $('pNo').onclick = cerrarPanel;
+}
+$('bTerminar').onclick = () => {
+  abrirPanel(`<h3>Terminar el viaje</h3>
+    <p>Se borran las HDR de la pantalla para cargar las del próximo viaje. Las llegadas marcadas quedan registradas.</p>
+    <button class="btn prim" id="pSi">Terminar viaje</button>
+    <button class="btn sec" id="pNo">Cancelar</button>`);
+  $('pSi').onclick = () => { viaje = null; guardar(); cerrarPanel(); render(); $('iHdr').focus(); };
   $('pNo').onclick = cerrarPanel;
 };
 
 /* ---------------- llegada ---------------- */
-$('bLlegue').onclick = () => { if(hdr) buscarUbicacion(); };
+$('bLlegue').onclick = () => { if(hdrsViaje().length) buscarUbicacion(); };
 
 function buscarUbicacion(){
   $('fondo').dataset.bloq = '1';
@@ -358,28 +388,53 @@ function elegirManual(marcaCel, pos, listaDist, modo){
 }
 
 function registrar(s, modo, pos, marcaCel){
-  const ya = marcados.find(m => m.hdr === hdr.numero && m.suc === s.suc);
-  if(ya){
+  const lista = hdrsViaje();
+  const libres = lista.filter(h => !marcados.some(m => m.hdr === h && m.suc === s.suc));
+  if(!libres.length){
     abrirPanel(`<h3>Ya está marcada</h3>
-      <p>La llegada a la sucursal <b>${esc(s.suc)}</b> para la HDR ${esc(hdr.numero)} ya se registró a las ${esc(ya.horaServidor || hora(ya.marcaCel))}.</p>
+      <p>La llegada a la sucursal <b>${esc(s.suc)}</b> ya se registró para ${lista.length > 1 ? 'todas las HDR del viaje' : 'esta HDR'}.</p>
       <button class="btn prim" id="pOk">Entendido</button>`);
     $('pOk').onclick = cerrarPanel; return;
   }
-  marcados.push({
-    id: uid(), hdr: hdr.numero, suc: s.suc, dir: s.dir, modo,
+  if(lista.length === 1){ guardarLlegada(s, modo, pos, marcaCel, libres); return; }
+
+  const sel = new Set();
+  abrirPanel(`<h3>¿Qué HDR descargás en la sucursal ${esc(s.suc)}?</h3>
+    <p>Marcá una o varias.</p>
+    ${lista.map(h => {
+      const aca = marcados.some(m => m.hdr === h && m.suc === s.suc);
+      const otra = marcados.find(m => m.hdr === h && m.suc !== s.suc);
+      const nota = aca ? 'ya marcada acá' : (otra ? 'ya marcada en Suc. ' + esc(otra.suc) : '');
+      return `<button class="opcion" data-h="${esc(h)}"${aca ? ' disabled' : ''}><span style="display:flex;align-items:center;gap:12px"><span class="marca"></span><b>HDR ${esc(h)}</b></span><span class="m">${nota}</span></button>`;
+    }).join('')}
+    <button class="btn rojo" id="pOk" disabled>Confirmar</button>
+    <button class="btn sec" id="pNo">Cancelar</button>`);
+  $('panel').querySelectorAll('.opcion:not([disabled])').forEach(b => b.onclick = () => {
+    const h = b.dataset.h;
+    if(sel.has(h)){ sel.delete(h); b.classList.remove('sel'); b.querySelector('.marca').textContent = ''; }
+    else { sel.add(h); b.classList.add('sel'); b.querySelector('.marca').textContent = '✓'; }
+    $('pOk').disabled = !sel.size;
+  });
+  $('pOk').onclick = () => { if(sel.size) guardarLlegada(s, modo, pos, marcaCel, lista.filter(h => sel.has(h))); };
+  $('pNo').onclick = cerrarPanel;
+}
+
+function guardarLlegada(s, modo, pos, marcaCel, hdrs){
+  const grp = uid();
+  hdrs.forEach(h => marcados.push({
+    id: uid(), grp, hdr: h, suc: s.suc, dir: s.dir, modo,
     lat: pos ? pos.lat : null, lon: pos ? pos.lon : null, acc: pos ? Math.round(pos.acc) : null,
     marcaCel, estado: 'pendiente', horaServidor: null
-  });
-  const nuevo = marcados[marcados.length - 1];
+  }));
   guardar(); render();
   sincronizar();
   if(waActivo()){
     abrirPanel(`<div class="check">✓</div>
       <h3 style="text-align:center">Llegada registrada</h3>
-      <p style="text-align:center">Sucursal <b>${esc(s.suc)}</b> a las ${hora(marcaCel)}.<br>Ahora avisá por WhatsApp.</p>
+      <p style="text-align:center">Sucursal <b>${esc(s.suc)}</b> a las ${hora(marcaCel)}<br>HDR ${hdrs.map(esc).join(', ')}<br>Ahora avisá por WhatsApp.</p>
       <button class="btn wa" id="pWa">Avisar por WhatsApp</button>
       <button class="btn sec" id="pNo">Después</button>`);
-    $('pWa').onclick = () => { avisarWhatsApp(nuevo.id); cerrarPanel(); };
+    $('pWa').onclick = () => { avisarWhatsApp(grp); cerrarPanel(); };
     $('pNo').onclick = cerrarPanel;
   } else {
     cerrarPanel();
@@ -389,20 +444,21 @@ function registrar(s, modo, pos, marcaCel){
 
 /* ---------------- WhatsApp ---------------- */
 function waActivo(){ return /^\d{10,15}$/.test(WHATSAPP_NUMERO); }
-function avisarWhatsApp(id){
-  const m = marcados.find(x => x.id === id);
-  if(!m || !waActivo()) return;
+function avisarWhatsApp(k){
+  const ms = marcados.filter(x => (x.grp || x.id) === k);
+  if(!ms.length || !waActivo()) return;
+  const m = ms[0];
   const lineas = [
     '*Llegada a sucursal*',
     'Sucursal: ' + m.suc + (m.dir ? ' - ' + m.dir : ''),
-    'HDR: ' + m.hdr,
+    'HDR: ' + ms.map(x => x.hdr).join(', '),
     'Hora: ' + (m.horaServidor || hora(m.marcaCel)),
     'Chofer: ' + (chofer ? chofer.nombre + ' (Leg. ' + chofer.legajo + ')' + (chofer.empresa ? ' - ' + chofer.empresa : '') : '')
   ];
   if(m.lat !== null && m.lon !== null) lineas.push('Ubicación: https://maps.google.com/?q=' + m.lat.toFixed(6) + ',' + m.lon.toFixed(6));
   if(m.modo === 'Manual' || m.modo === 'Sin GPS') lineas.push('(Sucursal elegida a mano: ' + m.modo + ')');
   const url = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(lineas.join('\n'));
-  m.wa = true; guardar(); render();
+  ms.forEach(x => x.wa = true); guardar(); render();
   window.open(url, '_blank');
 }
 
